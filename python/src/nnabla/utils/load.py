@@ -31,9 +31,12 @@ from nnabla.initializer import (
     calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
 from nnabla.logger import logger
 from nnabla.parameter import get_parameter_or_create
+
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
 from nnabla.utils.load_function import _create_function_instance
+from nnabla.utils.nnp_format import nnp_version
+
 from nnabla.utils.network import Network
 from nnabla.utils.progress import progress
 import nnabla as nn
@@ -196,7 +199,7 @@ def _create_variable(v, name, shape):
     return variable
 
 
-def _network(proto, default_context, all_variables):
+def _network(proto, default_context, batch_size, all_variables):
     network = Network()
     network.name = proto.name
     # Read Repeat Info
@@ -205,7 +208,12 @@ def _network(proto, default_context, all_variables):
         network.repeat_info[r.id] = r.times
 
     network.variables = OrderedDict()
-    network.batch_size = proto.batch_size
+
+    if batch_size is None:
+        network.batch_size = proto.batch_size
+    else:
+        network.batch_size = batch_size
+
     for v in proto.variable:
         for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in v.repeat_id]))):
             name = v.name + ''.join(['_' + v.repeat_id[index] + '[' +
@@ -381,7 +389,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
         if cache_dir == '':
             cache_dir = None
         if cache_dir and create_cache_explicitly:
-            if not os.path.exists(cache_dir) or overwrite_cache:
+            if not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0 or overwrite_cache:
                 if not os.path.exists(cache_dir):
                     os.mkdir(cache_dir)
                 logger.log(99, 'Creating cache data for "' + uri + '"')
@@ -393,7 +401,7 @@ def _create_dataset(uri, batch_size, shuffle, no_image_normalization, cache_dir,
                         index += batch_size
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, normalize=dataset.normalize))
-        elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir):
+        elif not cache_dir or overwrite_cache or not os.path.exists(cache_dir) or len(os.listdir(cache_dir)) == 0:
             if cache_dir and not os.path.exists(cache_dir):
                 os.mkdir(cache_dir)
             dataset.data_iterator = (lambda: data_iterator_csv_dataset(
@@ -414,14 +422,15 @@ def _datasets(proto, prepare_data_iterator=True):
     return datasets
 
 
-def _networks(proto, default_context, network_names=None):
+def _networks(proto, default_context, batch_size, network_names=None):
     # Load networks
     networks = OrderedDict()
     all_variables = {}
 
     for np in proto.network:
         if not network_names or np.name in network_names:
-            networks[np.name] = _network(np, default_context, all_variables)
+            networks[np.name] = _network(
+                np, default_context, batch_size, all_variables)
 
     return networks
 
@@ -536,7 +545,7 @@ def _executors(executors_proto, networks):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True):
+def load(filenames, prepare_data_iterator=True, batch_size=None):
     '''load
     Load network information from files.
 
@@ -552,23 +561,38 @@ def load(filenames, prepare_data_iterator=True):
     proto = nnabla_pb2.NNablaProtoBuf()
     for filename in filenames:
         _, ext = os.path.splitext(filename)
-        if 'txt' in ext:
+
+        # TODO: Here is some known problems.
+        #   - Even when protobuf file includes network structure,
+        #     it will not loaded.
+        #   - Even when prototxt file includes parameter,
+        #     it will not loaded.
+
+        if ext in ['.nntxt', '.prototxt']:
             with open(filename, 'rt') as f:
                 text_format.Merge(f.read(), proto)
         elif ext in ['.protobuf', '.h5']:
-            nn.load_parameters(filename, proto)
+            nn.load_parameters(filename)
+
         elif ext == '.nnp':
-            tmpdir = tempfile.mkdtemp()
-            with zipfile.ZipFile(filename, 'r') as nnp:
-                for name in nnp.namelist():
-                    nnp.extract(name, tmpdir)
-                    _, ext = os.path.splitext(name)
-                    if 'txt' in ext:
-                        with open(os.path.join(tmpdir, name), 'rt') as f:
-                            text_format.Merge(f.read(), proto)
-                    elif ext in ['.protobuf', '.h5']:
-                        nn.load_parameters(os.path.join(tmpdir, name), proto)
-            shutil.rmtree(tmpdir)
+            try:
+                tmpdir = tempfile.mkdtemp()
+                with zipfile.ZipFile(filename, 'r') as nnp:
+                    for name in nnp.namelist():
+                        _, ext = os.path.splitext(name)
+                        if name == 'nnp_version.txt':
+                            nnp.extract(name, tmpdir)
+                            with open(os.path.join(tmpdir, name), 'rt') as f:
+                                pass  # Currently nnp_version.txt is ignored.
+                        elif ext in ['.nntxt', '.prototxt']:
+                            nnp.extract(name, tmpdir)
+                            with open(os.path.join(tmpdir, name), 'rt') as f:
+                                text_format.Merge(f.read(), proto)
+                        elif ext in ['.protobuf', '.h5']:
+                            nnp.extract(name, tmpdir)
+                            nn.load_parameters(os.path.join(tmpdir, name))
+            finally:
+                shutil.rmtree(tmpdir)
 
     default_context = None
     if proto.HasField('global_config'):
@@ -589,7 +613,7 @@ def load(filenames, prepare_data_iterator=True):
         info.datasets = _datasets(proto, prepare_data_iterator)
 
     if len(proto.network) > 0:
-        info.networks = _networks(proto, default_context)
+        info.networks = _networks(proto, default_context, batch_size)
 
     if len(proto.optimizer) > 0:
         info.optimizers = _optimizers(

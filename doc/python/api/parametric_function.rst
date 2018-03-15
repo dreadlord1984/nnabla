@@ -62,6 +62,19 @@ Here is the list of parametric functions.
 .. autofunction:: binary_connect_convolution
 .. autofunction:: binary_weight_affine
 .. autofunction:: binary_weight_convolution
+.. autofunction:: inq_affine
+.. autofunction:: inq_convolution
+
+.. autofunction:: fixed_point_quantized_affine
+.. autofunction:: fixed_point_quantized_convolution
+.. autofunction:: pow2_quantized_affine
+.. autofunction:: pow2_quantized_convolution
+.. autofunction:: lstm
+
+.. autoclass:: LSTMCell
+
+    .. automethod:: __call__(x, w_init, b_init, fix_parameters)
+
 
 Parameter Initializer
 ---------------------

@@ -47,7 +47,7 @@ class SimpleDataSource(DataSource):
                            for x in range(len(self._load_func(0)))]
         if shuffle:
             self._order = list(
-                numpy.random.permutation(list(range(self._size))))
+                self._rng.permutation(list(range(self._size))))
         else:
             self._order = list(range(self._size))
 
@@ -101,9 +101,9 @@ class CacheDataSource(DataSource):
         self._order = []
 
         if self._shuffle:
-            for i in list(numpy.random.permutation(list(range(len(self._cache_files))))):
+            for i in list(self._rng.permutation(list(range(len(self._cache_files))))):
                 filename, length = self._cache_files[i]
-                for j in list(numpy.random.permutation(list(range(length)))):
+                for j in list(self._rng.permutation(list(range(length)))):
                     self._order.append((filename, j))
         else:
             for i in range(len(self._cache_files)):
@@ -206,7 +206,44 @@ class CsvDataSource(DataSource):
         if self._shuffle:
             logger.debug('Shuffle start.')
             self._order = list(
-                numpy.random.permutation(list(range(self._size))))
+                self._rng.permutation(list(range(self._size))))
             logger.debug('Shuffle end.')
         self._generation += 1
         super(CsvDataSource, self).reset()
+
+
+class ConcatDataSource(DataSource):
+    '''ConcatDataSource
+
+    Wrapper DataSource for Multiple DataSources.
+
+    '''
+
+    def __init__(self, data_source_list, shuffle=True, rng=None):
+        super(ConcatDataSource, self).__init__(shuffle=shuffle, rng=rng)
+        self._data_sources = data_source_list
+
+        self._sw_points = list(map(
+            lambda s: sum(
+                [x.size for x in data_source_list[:data_source_list.index(s) + 1]]),
+            data_source_list))  # Switching DataSource index
+
+        self._size = self._sw_points[-1]
+        self._variables = data_source_list[0].variables
+        self.reset()
+
+    def _get_data(self, position):
+        idx = self._indexes[position]
+        for i, data_bound in enumerate(self._sw_points):
+            if idx < data_bound:
+                _idx = idx - self._sw_points[i - 1] if i > 0 else idx
+                return self._data_sources[i]._get_data(_idx)
+        return None
+
+    def reset(self):
+        # reset method initilize self._indexes
+        if self._shuffle:
+            self._indexes = self._rng.permutation(self._size)
+        else:
+            self._indexes = numpy.arange(self._size)
+        super(ConcatDataSource, self).reset()

@@ -5,8 +5,9 @@ development and production. We aim to have it running everywhere: desktop PCs, H
 clusters, embedded devices and production servers.
 
 
-* [Neural Network Console](https://dl.sony.com/), a Windows GUI app for neural network development, has been released.
-* The GitHub repository of CUDA extension of Neural Network Libraries can be found [here](https://github.com/sony/nnabla-ext-cuda).
+* [Neural Network Libraries - CUDA extension](https://github.com/sony/nnabla-ext-cuda): An extension library of Neural Network Libraries that allows users to speed-up the computation on CUDA-capable GPUs.
+* [Neural Network Libraries - Examples](https://github.com/sony/nnabla-examples): Working examples of Neural Network Libraries from basic to state-of-the-art.
+* [Neural Network Console](https://dl.sony.com/): A Windows GUI app for neural network development.
 
 
 ## Installation
@@ -19,6 +20,14 @@ pip install nnabla
 
 This installs the CPU version of Neural Network Libraries. GPU-acceleration can be added by installing the CUDA extension with `pip install nnabla-ext-cuda`.
 
+For more details, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
+
+### Building from Source
+
+See [Build Manuals](doc/build/README.md).
+
+### Running on Docker
+For details on running on Docker, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
 
 ## Features
 
@@ -109,11 +118,6 @@ loss.backward()
 
 <https://nnabla.readthedocs.org>
 
-### Setup
-
-<https://nnabla.readthedocs.io/en/latest/python/installation.html>
-
-
 ### Getting started
 
 * A number of Jupyter notebook tutorials can be found in the [tutorial](https://github.com/sony/nnabla/tree/master/tutorial) folder.
@@ -121,6 +125,6 @@ loss.backward()
   working example in Neural Network Libraries and `python_api.ipynb` for an introduction into the
   Neural Network Libraries API.
 
-* We also provide some more sophisticated examples in the [`examples`](https://github.com/sony/nnabla/tree/master/examples) folder.
+* We also provide some more sophisticated examples at [`nnabla-examples`](https://github.com/sony/nnabla-examples) repository.
 
-* C++ API examples are avaiailable in [`exampels/cpp`](https://github.com/sony/nnabla/tree/master/examples/cpp).
+* C++ API examples are avaiailable in [`examples/cpp`](https://github.com/sony/nnabla/tree/master/examples/cpp).

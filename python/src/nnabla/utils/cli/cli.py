@@ -16,6 +16,7 @@ import argparse
 import os
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
@@ -33,6 +34,22 @@ def main():
         subparser.set_defaults(func=train_command)
     except:
         pass
+
+    from nnabla.utils.cli.forward import infer_command
+    # Infer
+    subparser = subparsers.add_parser('infer')
+    subparser.add_argument(
+        '-c', '--config', help='path to nntxt', required=True)
+    subparser.add_argument(
+        '-o', '--output', help='output file prefix', required=False)
+    subparser.add_argument(
+        '-p', '--param', help='path to parameter file', required=False)
+    subparser.add_argument(
+        '-b', '--batch_size',
+        help='Batch size to use batch size in nnp file set -1.',
+        type=int, default=1)
+    subparser.add_argument('inputs', nargs='+')
+    subparser.set_defaults(func=infer_command)
 
     try:
         from nnabla.utils.cli.forward import forward_command
@@ -120,7 +137,8 @@ def main():
     try:
         from nnabla.utils.cli.create_image_classification_dataset import create_image_classification_dataset_command
         # Create image classification dataset
-        subparser = subparsers.add_parser('create_image_classification_dataset')
+        subparser = subparsers.add_parser(
+            'create_image_classification_dataset')
         subparser.add_argument(
             '-i', '--sourcedir', help='source directory with directories for each class', required=True)
         subparser.add_argument(
@@ -143,16 +161,43 @@ def main():
             '-f2', '--file2', help='output file name 2')
         subparser.add_argument(
             '-r2', '--ratio2', help='output file ratio(%) 2')
-        subparser.set_defaults(func=create_image_classification_dataset_command)
+        subparser.set_defaults(
+            func=create_image_classification_dataset_command)
     except:
         pass
+
+    # Uploader
+    from nnabla.utils.cli.uploader import upload_command, Uploader
+    subparser = subparsers.add_parser('upload')
+    subparser.add_argument(
+        '-e', '--endpoint', help='set endpoint uri', type=str)
+    subparser.add_argument('token', help='token for upload')
+    subparser.add_argument('filename', help='filename to upload')
+    subparser.set_defaults(func=upload_command)
+
+    # Create TAR for uploader
+    from nnabla.utils.cli.uploader import create_tar_command
+    subparser = subparsers.add_parser('create_tar')
+    subparser.add_argument('source', help='CSV dataset')
+    subparser.add_argument('destination', help='TAR filename')
+    subparser.set_defaults(func=create_tar_command)
+
+    # Extract nnp file
+    from nnabla.utils.cli.extract import extract_command
+    subparser = subparsers.add_parser('extract')
+    subparser.add_argument(
+        '-l', '--list', help='list contents.', action='store_true')
+    subparser.add_argument(
+        '-x', '--extract', help='extract contents to current dir.', action='store_true')
+    subparser.add_argument('nnp', help='nnp filename')
+    subparser.set_defaults(func=extract_command)
 
     args = parser.parse_args()
     args.func(args)
 
 
 if __name__ == '__main__':
-    import thread
+    import six.moves._thread as thread
     import threading
     thread.stack_size(128 * 1024 * 1024)
     sys.setrecursionlimit(0x3fffffff)

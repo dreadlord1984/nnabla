@@ -36,27 +36,65 @@ template <typename T> void DataParallelCommunicator<T>::init() {
   NBLA_ERROR(error_code::not_implemented, "CPU init is not implemented.")
 }
 
-template <typename T> void DataParallelCommunicator<T>::reduce(bool division) {
+template <typename T>
+void DataParallelCommunicator<T>::reduce(const vector<NdArrayPtr> &ndarray_list,
+                                         int dst, bool division, bool inplace,
+                                         const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
 }
 
 template <typename T>
-void DataParallelCommunicator<T>::allreduce(bool division) {
+void DataParallelCommunicator<T>::reduce(NdArrayPtr ndarray, int dst,
+                                         bool division, bool inplace,
+                                         const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU reduce is not implemented.")
+}
+
+template <typename T>
+void DataParallelCommunicator<T>::allreduce(bool division, bool inplace) {
   NBLA_ERROR(error_code::not_implemented, "CPU allreduce is not implemented.")
 }
 
 template <typename T>
-void DataParallelCommunicator<T>::reducescatter(bool division) {
-  NBLA_ERROR(error_code::not_implemented,
-             "CPU reducescatter is not implemented.")
+void DataParallelCommunicator<T>::all_reduce(
+    const vector<NdArrayPtr> &ndarray_list, bool division, bool inplace,
+    const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
 }
 
-template <typename T> void DataParallelCommunicator<T>::bcast() {
+template <typename T>
+void DataParallelCommunicator<T>::all_reduce(NdArrayPtr ndarray, bool division,
+                                             bool inplace,
+                                             const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
+}
+
+template <typename T>
+void DataParallelCommunicator<T>::reduce_scatter(
+    const vector<NdArrayPtr> &ndarray_list, NdArrayPtr ndarray, bool division,
+    const string &group) {
+  NBLA_ERROR(error_code::not_implemented,
+             "CPU reduce_scatter is not implemented.")
+}
+
+template <typename T>
+void DataParallelCommunicator<T>::bcast(const vector<NdArrayPtr> &ndarray_list,
+                                        int src, bool inplace,
+                                        const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
 }
 
-template <typename T> void DataParallelCommunicator<T>::allgather() {
-  NBLA_ERROR(error_code::not_implemented, "CPU allgather is not implemented.")
+template <typename T>
+void DataParallelCommunicator<T>::bcast(NdArrayPtr ndarray, int src,
+                                        bool inplace, const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU bcast is not implemented.")
+}
+
+template <typename T>
+void DataParallelCommunicator<T>::all_gather(
+    NdArrayPtr ndarray, const vector<NdArrayPtr> &ndarray_list,
+    const string &group) {
+  NBLA_ERROR(error_code::not_implemented, "CPU all_gather is not implemented.")
 }
 
 template <typename T>
@@ -66,7 +104,7 @@ void DataParallelCommunicator<T>::reduce_async(bool division) {
 }
 
 template <typename T>
-void DataParallelCommunicator<T>::allreduce_async(bool division) {
+void DataParallelCommunicator<T>::allreduce_async(bool division, bool inplace) {
   NBLA_ERROR(error_code::not_implemented,
              "CPU allreduce_async is not implemented.")
 }
